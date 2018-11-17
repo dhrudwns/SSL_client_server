@@ -10,8 +10,8 @@ using namespace std;
 
 int create_socket(int port)
 {
-	SOCKET server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	sockaddr_in server_addr;
+	SOCKET server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // IPv4, TCP, TCP
+	struct sockaddr_in server_addr;
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
@@ -21,7 +21,7 @@ int create_socket(int port)
 	{
 		cout << "bind error : " << WSAGetLastError() << endl;
 	}
-	if (listen(server_socket, 5) == SOCKET_ERROR)
+	if (listen(server_socket, 5) == SOCKET_ERROR) // (bind complet socket, backlog)
 	{
 		cout << "listen error : " << WSAGetLastError() << endl;
 	}
@@ -32,7 +32,7 @@ int create_socket(int port)
 void init_openssl()
 {
 	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms(); // initalizaiton ssl
+	OpenSSL_add_ssl_algorithms(); // initalization ssl
 }
 
 void cleanup_openssl()
@@ -42,7 +42,7 @@ void cleanup_openssl()
 
 SSL_CTX *create_context()
 {
-	SSL_CTX *ctx = SSL_CTX_new(TLSv1_2_server_method());
+	SSL_CTX *ctx = SSL_CTX_new(TLSv1_2_server_method()); //TLSv1.2 context create
 	if (!ctx) {
 		perror("Unable to create SSL context");
 		ERR_print_errors_fp(stderr);
@@ -58,7 +58,7 @@ void configure_context(SSL_CTX *ctx)
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
-	// key load to ctx
+	// pkey add to ctx
 	if (SSL_CTX_use_PrivateKey_file(ctx, "C:\\Program Files\\SnoopSpy\\certificate\\test.com.key", SSL_FILETYPE_PEM) != 1) {
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
@@ -67,7 +67,7 @@ void configure_context(SSL_CTX *ctx)
 int main(int argc, char* argv[])
 {
 	SSL_CTX *ctx;
-	sockaddr_in client_addr;
+	struct sockaddr_in client_addr;
 	int client_addr_size = sizeof(client_addr);
 	WSADATA wsadata;
 	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0) {
@@ -76,7 +76,6 @@ int main(int argc, char* argv[])
 
 	init_openssl();
 	ctx = create_context();
-
 	configure_context(ctx);
 
 	SOCKET socket = create_socket(atoi(argv[1]));
@@ -89,9 +88,8 @@ int main(int argc, char* argv[])
 		if (client_socket == SOCKET_ERROR) {
 			cout << "accept error : " << WSAGetLastError() << endl;
 		}
-		
-		ssl = SSL_new(ctx); // create ssl struct
-		SSL_set_fd(ssl, client_socket); // connect ssl with client
+		ssl = SSL_new(ctx); // create ssl structs
+		SSL_set_fd(ssl, client_socket); // connect ssl with client, SOCKET BIO auto create
 
 		// handshake, success return 1
 		if (SSL_accept(ssl) <= 0) {
